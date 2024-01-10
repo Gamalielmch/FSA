@@ -118,7 +118,8 @@ menu.sheet = uimenu(menu.exp,'Label','Range stats',...
     'Enable','off','Callback',{@range_stats_export_Callback,handles});
 menu.image = uimenu(menu.exp,'Label','Labels image',...
     'Enable','off','Callback',{@labels_image_export_Callback,handles});
-
+menu.image = uimenu(menu.exp,'Label','Export contours',...
+    'Enable','off','Callback',{@contours_image_export_Callback,handles});
 %%%%%%%%%%%%%%%%%%%%% Menu help %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 menu.help = uimenu(hObject,'Label','Help','ForegroundColor',[0 0 0]);
 menu.doc = uimenu(menu.help,'Label','User guide',...
@@ -191,14 +192,14 @@ end
 
 
 if iscell(Var.File)  %% multiple
-    Var.Number_I=length(Var.File);
-    Var.Images=cell(1,Var.Number_I);
-    for i=1:Var.Number_I
+    Var.Number_Images=length(Var.File);
+    Var.Images=cell(1,Var.Number_Images);
+    for i=1:Var.Number_Images
         I=binarize_image(imread([Var.Path, Var.File{i}]));
         Var.Images{i}=I;
     end
 else
-    Var.Number_I=1;  %% single
+    Var.Number_Images=1;  %% single
     Var.File={Var.File};
     Var.Images=cell(1,1);
     I=binarize_image(imread([Var.Path, Var.File{1}]));
@@ -206,15 +207,15 @@ else
 end
 
 %%% Flags 
-Var.Fourier=zeros(1,Var.Number_I);
-Var.Selected_I=1;
+Var.Fourier=zeros(1,Var.Number_Images);
+Var.Selected_Image=1;
 
 %%% Reset Axes and Enable navigation tools
 cla
 set(Navigation.select, 'Enable','on')
 set(Navigation.before, 'Enable','on')
 set(Navigation.next, 'Enable','on')
-set(Navigation.select, 'String',num2str(Var.Selected_I))
+set(Navigation.select, 'String',num2str(Var.Selected_Image))
 imshow(Var.Images{1})
 
 %%%  Enable/disabled menu
@@ -229,15 +230,15 @@ set(findall(menu.graph, '-property','Enable'),'Enable','off')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function next_Callback(hObject, eventdata, handles)
 global Navigation Var
-if (Var.Selected_I+1)>Var.Number_I
+if (Var.Selected_Image+1)>Var.Number_Images
     return
 else
-    Var.Selected_I=Var.Selected_I+1;
-    set(Navigation.select, 'String',num2str(Var.Selected_I))
-    imshow(Var.Images{Var.Selected_I})
+    Var.Selected_Image=Var.Selected_Image+1;
+    set(Navigation.select, 'String',num2str(Var.Selected_Image))
+    imshow(Var.Images{Var.Selected_Image})
 end
 
-if Var.Fourier(Var.Selected_I)==1
+if Var.Fourier(Var.Selected_Image)==1
  contours_plot_Callback(@contours_plot_Callback, eventdata, handles)
 end
 
@@ -246,15 +247,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function before_Callback(hObject, eventdata, handles)
 global Var Navigation
-if (Var.Selected_I-1)<1
+if (Var.Selected_Image-1)<1
     return
 else
-    Var.Selected_I=Var.Selected_I-1;
-    set(Navigation.select, 'String',num2str(Var.Selected_I))
-    imshow(Var.Images{Var.Selected_I})
+    Var.Selected_Image=Var.Selected_Image-1;
+    set(Navigation.select, 'String',num2str(Var.Selected_Image))
+    imshow(Var.Images{Var.Selected_Image})
 end
 
-if Var.Fourier(Var.Selected_I)==1
+if Var.Fourier(Var.Selected_Image)==1
     contours_plot_Callback(@contours_plot_Callback, eventdata, handles)
 end
 
@@ -267,8 +268,8 @@ rr=figure('Name','Selecting ROI','NumberTitle','off');
 javaFrame = get(rr,'JavaFrame');
 javaFrame.setFigureIcon(javax.swing.ImageIcon('icon.JPG'));
 set(gcf, 'MenuBar', 'None')
-imshow(Var.Images{Var.Selected_I})
-[a,b,~]=size(Var.Images{Var.Selected_I});
+imshow(Var.Images{Var.Selected_Image})
+[a,b,~]=size(Var.Images{Var.Selected_Image});
 
 switch typeroi
     case 1
@@ -308,8 +309,8 @@ else
     return
 end
 
-Var.Images{Var.Selected_I}=Var.Images{Var.Selected_I}.*bw;
-imshow(Var.Images{Var.Selected_I})
+Var.Images{Var.Selected_Image}=im2bw(Var.Images{Var.Selected_Image}.*bw);
+imshow(Var.Images{Var.Selected_Image})
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%       Complement color      %%
@@ -323,15 +324,15 @@ choice = questdlg('Apply to all images?', ...
 % Handle response
 switch choice
     case 'All'
-        for i=1:Var.Number_I
-            Var.Images{i}=1-Var.Images{i};
+        for i=1:Var.Number_Images
+            Var.Images{i}=imbinarize(1-Var.Images{i});
         end
     case 'Current'
-        Var.Images{Var.Selected_I}=1-Var.Images{Var.Selected_I};
+        Var.Images{Var.Selected_Image}=im2bw(1-Var.Images{Var.Selected_Image});
     case 'Cancel'
         return
 end
-imshow(Var.Images{Var.Selected_I})
+imshow(Var.Images{Var.Selected_Image})
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -346,15 +347,15 @@ choice = questdlg('Apply to all images?', ...
 % Handle response
 switch choice
     case 'All'
-        for i=1:Var.Number_I
-            Var.Images{i}=imclearborder(Var.Images{i});
+        for i=1:Var.Number_Images
+            Var.Images{i}=im2bw(imclearborder(Var.Images{i}));
         end
     case 'Current'
-       Var.Images{Var.Selected_I}=imclearborder(Var.Images{Var.Selected_I});
+       Var.Images{Var.Selected_Image}=im2bw(imclearborder(Var.Images{Var.Selected_Image}));
     case 'Cancel'
         return
 end
-imshow(Var.Images{Var.Selected_I})
+imshow(Var.Images{Var.Selected_Image})
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -363,21 +364,29 @@ imshow(Var.Images{Var.Selected_I})
 function optimization_Callback(hObject, eventdata, handles)
 global Var Navigation menu
 Var.method=0;
-Var.npart=zeros(Var.Number_I,1);
+Var.npart=zeros(Var.Number_Images,1);
 cla
-Var.ene=cell(3,Var.Number_I,4);
-Var.spectrum=cell(2,Var.Number_I);
-Var.mini=zeros(Var.Number_I,Var.npart(Var.Selected_I));
-Var.mc=cell(1,Var.Number_I);
-Var.range=cell(1,Var.Number_I);
-Var.peri_part=cell(1,Var.Number_I);
-Var.centroid_part=cell(1,Var.Number_I);
-Var.NPoints=cell(1,Var.Number_I);
-for ims=1:Var.Number_I
+Var.ene=cell(3,Var.Number_Images,4);
+Var.spectrum=cell(2,Var.Number_Images);
+Var.mini=zeros(Var.Number_Images,Var.npart(Var.Selected_Image));
+Var.mc=cell(1,Var.Number_Images);
+Var.range=cell(1,Var.Number_Images);
+Var.peri_part=cell(1,Var.Number_Images);
+Var.centroid_part=cell(1,Var.Number_Images);
+Var.NPoints=cell(1,Var.Number_Images);
+for ims=1:Var.Number_Images
     imshow(Var.Images{ims})
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     hold on
-    s  = regionprops(Var.Images{ims}, 'centroid','Extrema');
+    s  = regionprops(Var.Images{ims}, 'centroid','Extrema','PixelIdxList');
+    ind=[];
+    for xi=1:length(s)
+        if length(s(xi).PixelIdxList)<100
+            ind=[ind,xi];
+        end
+    end
+    s(ind)=[];
+    
     extrema = cat(1, s.Extrema);
     left_most_top = extrema(1:8:end, :);
     [~, sort_order] = sortrows(fliplr(left_most_top));
@@ -429,7 +438,11 @@ for ims=1:Var.Number_I
         data =Var.mc{ims}(part,1)+1:Var.mc{ims}(part,3);
         data(2,:)=sacum(Var.mc{ims}(part,1)+1:Var.mc{ims}(part,3));
         %%%L method external function
+        try
         optimal_r=Lmethod(data,0);
+        catch
+            dif
+        end
         Var.mc{ims}(part,2)=optimal_r;
         
         %%Harmonics Range 
@@ -492,7 +505,7 @@ for ims=1:Var.Number_I
     drawnow
     set(Navigation.select, 'String',num2str(ims))
 end
-Var.Selected_I=ims;
+Var.Selected_Image=ims;
 %%% Enable-Disable Menu
 set(findall(menu.exp, '-property','Enable'),'Enable','on')
 set(findall(menu.graph, '-property','Enable'),'Enable','on')
@@ -565,16 +578,16 @@ linearized_Analysis_Callback(@linearized_Analysis_Callback, eventdata, handles)
 function linearized_Analysis_Callback(hObject, eventdata, handles)
 global axesimage Var Navigation menu
 Var.method=1;
-Var.npart=zeros(Var.Number_I,1);
+Var.npart=zeros(Var.Number_Images,1);
 cla
 set(axesimage,'Position',[0 0.05 1 .95])
-Var.ene=cell(3,Var.Number_I,4);
-Var.spectrum=cell(2,Var.Number_I);
-Var.mini=zeros(Var.Number_I,Var.npart(Var.Selected_I));
-Var.peri_part=cell(1,Var.Number_I);
-Var.centroid_part=cell(1,Var.Number_I);
-Var.NPoints=cell(1,Var.Number_I);
-for ims=1:Var.Number_I
+Var.ene=cell(3,Var.Number_Images,4);
+Var.spectrum=cell(2,Var.Number_Images);
+Var.mini=zeros(Var.Number_Images,Var.npart(Var.Selected_Image));
+Var.peri_part=cell(1,Var.Number_Images);
+Var.centroid_part=cell(1,Var.Number_Images);
+Var.NPoints=cell(1,Var.Number_Images);
+for ims=1:Var.Number_Images
     imshow(Var.Images{ims})
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     hold on
@@ -638,6 +651,10 @@ for ims=1:Var.Number_I
         %%%%% Text 
         Var.mini(Var.mini==0)=0.01;
         dd=(Var.mini(ims,part)*2)/6;
+        
+        hnd1=text(Var.centroid_part{ims}(part,1)-Var.mini(part)/3,Var.centroid_part{ims}(part,2)-Var.mini(part)/2-1.5*dd,'mean:');
+        set(hnd1,'FontUnits','pixels','FontSize',dd*.35,'Color',[1 0 0])
+
         hnd1=text(Var.centroid_part{ims}(part,1)-Var.mini(part)/3,Var.centroid_part{ims}(part,2)-Var.mini(part)/2,num2str(Var.ene{1,ims,1}(part),'%6.3f'));
         set(hnd1,'FontUnits','pixels','FontSize',dd*.35,'Color',[1 0 0])
         
@@ -656,7 +673,7 @@ for ims=1:Var.Number_I
     drawnow
     set(Navigation.select, 'String',num2str(ims))
 end
-Var.Selected_I=ims;
+Var.Selected_Image=ims;
 %%% Enable-Disable Menu
 set(findall(menu.exp, '-property','Enable'),'Enable','on')
 set(findall(menu.graph, '-property','Enable'),'Enable','on')
@@ -686,7 +703,7 @@ catch
 end
 fileID = fopen(pathexport,'w');
 fprintf(fileID, ['Fourier Analysis ', date,'']);
-for ii=1:Var.Number_I
+for ii=1:Var.Number_Images
     fprintf(fileID, '\n\n');
     
     if Var.method==1
@@ -768,7 +785,7 @@ end
 fileID = fopen(pathexport,'w');
 fprintf(fileID, ['Fourier Analysis ', date,'\n']);
 fprintf(fileID, 'Normalized Spectrum ');
-for ii=1:Var.Number_I
+for ii=1:Var.Number_Images
     fprintf(fileID, '\n\n');
     fprintf(fileID, [Var.File{ii}]);
     fprintf(fileID, '\n\t');
@@ -860,7 +877,7 @@ catch
         return
     end
 end
-for ims=1:Var.Number_I
+for ims=1:Var.Number_Images
     imgOut=Var.Images{ims}*255;
     cen=Var.centroid_part{ims};
     imgOut = insertInImage(uint8(imgOut), @()text(cen(:,1),cen(:,2), num2str([1:Var.npart(ims)]')),...
@@ -870,6 +887,75 @@ for ims=1:Var.Number_I
     imwrite(imgOut,[pathexport,'\',Var.File{ims}(1:k-1),'_Label.jpg']);
 end
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%      Export contours image        %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function contours_image_export_Callback(hObject, eventdata, handles)
+global Var
+
+try
+    pathexport=uigetdir({'*.png'},'Save contours',Var.Path);
+    if isnumeric(pathexport)
+        return
+    end
+catch
+    pathexport=uigetdir('*.png');
+    if isnumeric(pathexport)
+        return
+    end
+end
+for ims=1:Var.Number_Images
+    fig= figure;
+    imshow(Var.Images{ims})
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    hold on
+    s  = regionprops(Var.Images{ims}, 'centroid','Extrema');
+    extrema = cat(1, s.Extrema);
+    left_most_top = extrema(1:8:end, :);
+    [~, sort_order] = sortrows(fliplr(left_most_top));
+    s2 = s(sort_order);
+    Var.centroid_part{ims} = cat(1, s2.Centroid);
+    Var.npart(ims)=length(s);
+    ll=bwboundaries(Var.Images{ims});
+    ll=ll(sort_order);
+    Var.peri_part{ims}=cell(1,Var.npart(ims),3);
+    Var.NPoints{ims}=ones(Var.npart(ims),1)*512;
+    Var.spectrum{1,ims}=cell(Var.npart(ims),1);
+    Var.spectrum{2,ims}=cell(Var.npart(ims),1);
+    for part=1:Var.npart(ims)
+        
+        %%%%%%%%%%%%%% (R, theta) Method
+        [dth, rhon, fac,  Var.mini(ims,part)]=RTmethod(ll{part},Var.centroid_part{ims}(part,:),1);
+             
+        %%%% Analysis Fourier
+        Pyy=fft(rhon, Var.NPoints{ims}(part));  
+        %%%%% Reconstructed Contour plot 
+        for i=1:3
+            if Var.method==0
+                har=Var.mc{ims}(part,i);
+            else
+                har=Var.mc(i);
+            end
+            Pyyr=zeros(size(Pyy));
+            Pyyr(1:har)=Pyy(1:har);
+            Pyyr(end-har+2:end)=Pyy(end-har+2:end);
+            P=ifft(Pyyr, Var.NPoints{ims}(part),'symmetric');
+            P=P.*fac;
+            [x,y] = pol2cart(dth,P);
+            x1=x+Var.centroid_part{ims}(part,1);
+            y1=y+Var.centroid_part{ims}(part,2);
+            plot(x1,y1,'r','LineWidth',0.1,'Color',Var.Color (i,:))
+            Var.peri_part{ims}{1,part,i}=x1;
+            Var.peri_part{ims}{2,part,i}=y1;
+        end
+
+    end
+    drawnow
+    print(gcf,[pathexport,'\',Var.File{ims},'_contours.png'],'-dpng','-r600');
+    close(fig)
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%          Form   graphs            %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -877,33 +963,33 @@ function form_graphs_Callback(hObject, eventdata, handles)
 global Var
 
 %%% Mean of sum of each image  
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{1,i,4});
 std_t(i)=std(Var.ene{1,i,4});
 end
-title_g={'Mean of the sum of the images', 'Harmonics range of form'};
+title_g={'Mean of harmonics sum of the form'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 %%% Mean of mean of each image  
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{1,i,1});
 std_t(i)=std(Var.ene{1,i,1});
 end
-title_g={'Mean of the mean of the images', 'Harmonics range of form'};
+title_g={'Mean of harmonics mean of the form'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 %%% Mean of median of each image   
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{1,i,2});
 std_t(i)=std(Var.ene{1,i,2});
 end
-title_g={'Mean of the median of the images', 'Harmonics range of form'};
+title_g={'Mean of harmonics median of the form'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -913,34 +999,34 @@ function roundness_graphs_Callback(hObject, eventdata, handles)
 global Var
 
 %%% Mean of sum of each image  
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{2,i,4});
 std_t(i)=std(Var.ene{2,i,4});
 end
-title_g={'Mean of the sum of the images', 'Harmonics range of roundness'};
+title_g={'Mean of harmonics sum of the roundness'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 
 %%% Mean of mean of each image  
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{2,i,1});
 std_t(i)=std(Var.ene{2,i,1});
 end
-title_g={'Mean of the mean of the images', 'Harmonics range of roundness'};
+title_g={'Mean of harmonics mean of the roundness'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 %%% Mean of median of each image   
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{2,i,2});
 std_t(i)=std(Var.ene{2,i,2});
 end
-title_g={'Mean of the median of the images', 'Harmonics range of roundness'};
+title_g={'Mean of harmonics median of the roundness'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 
@@ -951,33 +1037,33 @@ function roughness_graphs_Callback(hObject, eventdata, handles)
 global Var
 
 %%% Mean of sum of each image  
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{3,i,4});
 std_t(i)=std(Var.ene{3,i,4});
 end
-title_g={'Mean of the sum of the images', 'Harmonics range of roughnness'};
+title_g={'Mean of harmonics sum of the roughnness'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 %%% Mean of mean of each image  
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{3,i,1});
 std_t(i)=std(Var.ene{3,i,1});
 end
-title_g={'Mean of the mean of the images', 'Harmonics range of roughnness'};
+title_g={'Mean of harmonics mean of the roughnness'};
 figure_graph_plot(mean_t,std_t,title_g)
 
 %%% Mean of median of each image   
-mean_t=zeros(1,Var.Number_I);
+mean_t=zeros(1,Var.Number_Images);
 std_t=mean_t;
-for i=1:Var.Number_I
+for i=1:Var.Number_Images
 mean_t(i)=mean(Var.ene{3,i,2});
 std_t(i)=std(Var.ene{3,i,2});
 end
-title_g={'Mean of the median of the images', 'Harmonics range of roughnness'};
+title_g={'Mean of harmonics median of the roughnness'};
 figure_graph_plot(mean_t,std_t,title_g)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%           contours  plot          %%
@@ -985,23 +1071,23 @@ figure_graph_plot(mean_t,std_t,title_g)
 function contours_plot_Callback(hObject, eventdata, handles)
 global Var
 hold on
-for part=1:Var.npart(Var.Selected_I)
+for part=1:Var.npart(Var.Selected_Image)
     for i=1:3 %%%% plot General, Roundness and Roughness contours
-        xt=Var.peri_part{Var.Selected_I}{1,part,i};
-        yt=Var.peri_part{Var.Selected_I}{2,part,i};
+        xt=Var.peri_part{Var.Selected_Image}{1,part,i};
+        yt=Var.peri_part{Var.Selected_Image}{2,part,i};
         plot(xt,yt,'r','LineWidth',1,'Color',Var.Color (i,:))
     end
-     cx= Var.centroid_part{Var.Selected_I}(part,1);
-    cy=Var.centroid_part{Var.Selected_I}(part,2);    Var.mini(Var.mini==0)=0.01;
-    dd=(Var.mini(Var.Selected_I,part)*2)/6;
-    hnd1=text(cx-Var.mini(part)/3,cy-Var.mini(part)/2,num2str(Var.ene{1,Var.Selected_I,1}(part),'%6.3f'));
+     cx= Var.centroid_part{Var.Selected_Image}(part,1);
+    cy=Var.centroid_part{Var.Selected_Image}(part,2);    Var.mini(Var.mini==0)=0.01;
+    dd=(Var.mini(Var.Selected_Image,part)*2)/6;
+    hnd1=text(cx-Var.mini(part)/3,cy-Var.mini(part)/2,num2str(Var.ene{1,Var.Selected_Image,1}(part),'%6.3f'));
     set(hnd1,'FontUnits','pixels','FontSize',dd*.35,'Color',[1 0 0])
     
     
-    hnd1=text(cx-Var.mini(part)/3,cy-Var.mini(part)/2+1.5*dd,num2str(Var.ene{2,Var.Selected_I,1}(part),'%6.3f'));
+    hnd1=text(cx-Var.mini(part)/3,cy-Var.mini(part)/2+1.5*dd,num2str(Var.ene{2,Var.Selected_Image,1}(part),'%6.3f'));
     set(hnd1,'FontUnits','pixels','FontSize',dd*.35,'Color',[0 1 0])
     
-    hnd1=text(cx-Var.mini(part)/3,cy-Var.mini(part)/2+3*dd,num2str(Var.ene{3,Var.Selected_I,1}(part),'%6.3f'));
+    hnd1=text(cx-Var.mini(part)/3,cy-Var.mini(part)/2+3*dd,num2str(Var.ene{3,Var.Selected_Image,1}(part),'%6.3f'));
     set(hnd1,'FontUnits','pixels','FontSize',dd*.35,'Color',[0 0 1])
     
 end
@@ -1023,9 +1109,80 @@ figure1=figure('Color',[1 1 1]);
     hold(axes1,'all');
 errorbar(mean_t,std_t,'-o','MarkerSize',7,...
     'MarkerEdgeColor','red','MarkerFaceColor','red')
-xlim([0,Var.Number_I+1])
-set(gca,'xtick',1:Var.Number_I,'xticklabel',Var.File)
+xlim([0,Var.Number_Images+1])
+set(gca,'xtick',1:Var.Number_Images,'xticklabel',Var.File)
 title(title_g)
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%           Segmentation           %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function I=binarize_image(I)
+
+if size(I,3)>3
+    I=I(:,:,1:3);
+end
+if ~islogical(I)
+    I=im2bw(I);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%             L-Method              %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [optimal]=Lmethod(data,dx)
+%%data 2xN  1XN = independient varible, 2xN = depediente variable
+% N data length. N>9
+% dx = displacement
+N=size(data,2);
+if length(N)<9
+    S=ones(N,1);
+    for a=3:N-5
+        [P1,~]= polyfit(data(1,1:a),data(2,1:a),1);
+        [P2,~] = polyfit(data(1,a+dx:end),data(2,a+dx:end),1);
+        S(a)= sum([(data(2,1:a)-P1(1)*data(1,1:a)-P1(2)).^2,(data(2,a+dx:end)-P2(1)*data(1,a+dx:end)-P2(2)).^2]);
+    end
+    %%%% the best fitting
+    [~,optimal]=min(S);
+    optimal=(data(1,optimal(1)));
+else
+    optimal= N/2;
+    f = uifigure;
+    message = sprintf('Length Data < 9! \n the threshold is N/2 .');
+    uialert(f,message,'Warning',... 
+        'Icon','warning');
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%             R-Method              %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [theta, rho, fac, mini]=RTmethod(perimeter,centroid,interp)
+% Perimeter array 2D
+perimeter(:,2)=perimeter(:,2)-centroid(1);
+perimeter(:,1)=perimeter(:,1)-centroid(2);
+[theta,rho] = cart2pol(perimeter(:,2),perimeter(:,1));
+mini=min(rho);
+
+%%%%% Equally spaced sampling
+dth=linspace(-pi,pi,size(perimeter,1));
+rhoe=zeros(size(dth));
+for j=1:size(perimeter,1)
+    resta=abs(theta-dth(j));
+    [~,k]=sort(resta);
+    rhoe(j)=mean([rho(k(1)),rho(k(2)),rho(k(3))]);
+end
+if interp==1
+    %%% Interpolation
+    theta=linspace(-pi,pi,512);
+    rho=interp1(dth,rhoe, theta,'linear', 'extrap');
+else
+    rho=rhoe;
+    theta=dth;
+end
+%%%% Unit
+fac=max(rho);
+rho=rho/max(rho);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%         Help and about us         %%
@@ -1040,3 +1197,4 @@ web('http://www.laima-uaslp.org/contact.html','-new','-notoolbar')
 web('http://pds.uaz.edu.mx/investigadores','-new','-notoolbar')
 function license_Callback(hObject, eventdata, handles)
 web('http://pds.uaz.edu.mx/documents/384402/0/License.pdf/9988d2b6-dff5-305d-c4da-e9a3885a5a7b','-new','-notoolbar')
+
